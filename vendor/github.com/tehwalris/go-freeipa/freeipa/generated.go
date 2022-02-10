@@ -10,7 +10,7 @@ import (
   "strconv"
 )
 
-var apiVersion = "2.237"
+var apiVersion = "2.231"
 
 type request struct {
   Method string `json:"method"`
@@ -25401,6 +25401,12 @@ Host operating system and version (e.g. "Fedora 9")
     Nsosversion *string `json:"nsosversion,omitempty"`
   
     /*
+User password
+Password used in bulk enrollment
+    */
+    Userpassword *string `json:"userpassword,omitempty"`
+  
+    /*
 Certificate
 Base-64 encoded host certificate
     */
@@ -27058,12 +27064,6 @@ Print entries as stored on the server. Only affects output format.
 Suppress processing of membership attributes.
     */
     NoMembers *bool `json:"no_members,omitempty"`
-  
-    /*
-Rename
-Rename the host group object
-    */
-    Rename *string `json:"rename,omitempty"`
   }
 
 type hostgroupModKwParams struct {
@@ -57751,111 +57751,6 @@ func (t *TrustDelResult) String() string {
     return fmt.Sprintf("TrustDelResult[failed json.Marshal: %v]", e)
   }
   return fmt.Sprintf("TrustDelResult%v", string(b))
-}
-
-/*
-Configure this server as a trust agent.
-*/
-func (c *Client) TrustEnableAgent(
-  reqArgs *TrustEnableAgentArgs,
-  optArgs *TrustEnableAgentOptionalArgs, // can be nil
-) (*TrustEnableAgentResult, error) {
-  if reqArgs == nil {
-    return nil, fmt.Errorf("reqArgs cannot be nil")
-  }
-  kwp := trustEnableAgentKwParams{
-    TrustEnableAgentArgs: reqArgs,
-    TrustEnableAgentOptionalArgs: optArgs,
-    Version: apiVersion,
-  }
-  req := request{
-    Method: "trust_enable_agent",
-    Params: []interface{}{
-      []interface{}{}, &kwp},
-  }
-  readCloser, e := c.exec(&req)
-  if e != nil {
-    return nil, e
-  }
-  defer readCloser.Close()
-  var res trustEnableAgentResponse
-	if e := json.NewDecoder(readCloser).Decode(&res); e != nil {
-		return nil, e
-	}
-	if res.Error != nil {
-		return nil, res.Error
-	}
-  if res.Result == nil {
-    return nil, fmt.Errorf("missing result in response")
-  }
-  return res.Result, nil
-}
-
-type TrustEnableAgentArgs struct {
-  
-    /*
-Remote server name
-Remote IPA server hostname
-    */
-    RemoteCn string `json:"remote_cn,omitempty"`
-  }
-
-type TrustEnableAgentOptionalArgs struct {
-  
-    /*
-
-Enable support for trusted domains for old clients
-    */
-    EnableCompat *bool `json:"enable_compat,omitempty"`
-  }
-
-type trustEnableAgentKwParams struct {
-  *TrustEnableAgentArgs
-  *TrustEnableAgentOptionalArgs
-
-  /*
-  Automatically set.
-  Used by the server to determine whether to accept the request.
-  */
-  Version string `json:"version"`
-}
-
-type trustEnableAgentResponse struct {
-	Error  *Error      `json:"error"`
-	Result *TrustEnableAgentResult `json:"result"`
-}
-
-type TrustEnableAgentResult struct {
-  
-  
-    /*
-User-friendly description of action performed
-    (optional)
-    */
-    Summary *string `json:"summary,omitempty"`
-  
-    /*
-True means the operation was successful
-    (required)
-    */
-    Result bool `json:"result,omitempty"`
-  
-    /*
-The primary_key value of the entry, e.g. 'jdoe' for a user
-    (required)
-    */
-    Value interface{} `json:"value,omitempty"`
-  }
-
-func (t *TrustEnableAgentResult) String() string {
-  if t == nil {
-    return "<nil>"
-  }
-  b, e := json.Marshal(t)
-  if e != nil {
-    return fmt.Sprintf("TrustEnableAgentResult[failed json.Marshal: %v]", e)
-  }
-  return fmt.Sprintf("TrustEnableAgentResult%v", string(b))
 }
 
 /*
@@ -108450,8 +108345,6 @@ const HTTPRequestErrorCode = 4035
 const RedundantMappingRuleCode = 4036
 
 const CSRTemplateErrorCode = 4037
-
-const AlreadyContainsValueErrorCode = 4038
 
 const BuiltinErrorCode = 4100
 

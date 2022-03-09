@@ -38,7 +38,7 @@ func toGoType(ipaType string) string {
 	case "str":
 		return "string"
 	case "bool":
-		return "IPABool"
+		return "IPAPrim[bool]"
 	case "bytes":
 		return "string"
 	case "datetime":

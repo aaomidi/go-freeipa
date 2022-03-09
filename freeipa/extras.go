@@ -22,19 +22,62 @@ func (a *DNSName) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type IPAPrim<T> T
+type Primitives interface {
+	int | bool | string
+}
+
+type IPAPrim[T Primitives] struct {
+	Value T
+}
+
+func (a *IPAPrim[T]) UnmarshalJSON(data []byte) error {
+	var result T
+	var resultStr string
+	var multi []string
+	err := json.Unmarshal(data, &result)
+	if err != nil {
+		err = json.Unmarshal(data, &multi)
+		if err != nil {
+			err = json.Unmarshal(data, &resultStr)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Extract just one value
+			for _, v := range multi {
+				resultStr = v
+				break
+			}
+		}
+		var postConv any
+		switch any(result).(type) {
+		case bool:
+			postConv, err = strconv.ParseBool(resultStr)
+			if err != nil {
+				return err
+			}
+		case int:
+			postConv, err = strconv.ParseInt(resultStr, 10, 32)
+			if err != nil {
+				return err
+			}
+		}
+		result = T(postConv)
+
+	}
+
+	*a = IPAPrim[T]{Value: result}
+	return nil
+}
 
 type IPABool bool
 
 func (a *IPABool) UnmarshalJSON(data []byte) error {
 	var result bool
-	var resultBool bool
 	var resultStr string
 	var multi []string
-	err := json.Unmarshal(data, &resultBool)
-	if err == nil {
-		result = resultBool
-	} else {
+	err := json.Unmarshal(data, &result)
+	if err != nil {
 		err = json.Unmarshal(data, &multi)
 		if err != nil {
 			err = json.Unmarshal(data, &resultStr)

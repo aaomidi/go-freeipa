@@ -6,8 +6,6 @@ import (
   "time"
 	"encoding/json"
   "fmt"
-  "reflect"
-  "strconv"
 )
 
 var apiVersion = "{{.Schema.Version}}"
@@ -147,9 +145,11 @@ func (t *{{.UpperName}}) String() string {
   return fmt.Sprintf("{{.UpperName}}%v", string(b))
 }
 
+{{/*
+
 type json{{.UpperName}} struct {
   {{range .Params}}
-    {{.UpperName}} interface{} `json:"{{.Name}}"`
+    {{.UpperName}} {{ToGoType .Type}} `json:"{{if .Multivalue}}[]{{end}}{{.Name}}"`
   {{end -}}
 }
 
@@ -167,24 +167,11 @@ func (out *{{.UpperName}}) UnmarshalJSON(data []byte) error {
     sliceOk := sliceWrapperOk
     if sliceWrapperOk {
       for _, rawItem := range sliceWrapperV {
-        {{if eq "int" (ToGoType .Type)}}
-        itemV, itemOk := rawItem.(string)
-        {{else}}
-        itemV, itemOk := rawItem.({{ToGoType .Type}})
-        {{end}}
-        if !itemOk {
-          sliceOk = false
-          break
+        var processed {{ToGoType .Type}}
+        if e := json.Unmarshal(rawItem, &processed); e != nil {
+          return e
         }
-        {{if eq "int" (ToGoType .Type)}}
-        intV, e := strconv.Atoi(itemV)
-        if e != nil {
-          return fmt.Errorf("unexpected value for field {{.UpperName}}: %v (hit string which couldn't be converted to int)", raw)
-        }
-        sliceV = append(sliceV, intV)
-        {{else}}
-        sliceV = append(sliceV, itemV)
-        {{end}}
+        sliceV = append(sliceV, processed)
       }
     }
     {{if .Multivalue}}
@@ -224,6 +211,7 @@ func (out *{{.UpperName}}) UnmarshalJSON(data []byte) error {
   {{end -}}
   return nil
 }
+*/}}
 {{end}}
 
 {{range .Errs}}

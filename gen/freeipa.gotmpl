@@ -30,7 +30,6 @@ func (c *Client) {{.UpperName}}(
     return nil, fmt.Errorf("reqArgs cannot be nil")
   }
   kwp := {{.LowerName}}KwParams{
-    {{.UpperName}}Args: reqArgs,
     {{.UpperName}}OptionalArgs: optArgs,
     Version: apiVersion,
   }
@@ -38,6 +37,7 @@ func (c *Client) {{.UpperName}}(
     Method: "{{.Name}}",
     Params: []interface{}{
       []interface{}{
+        {{- range .RequiredParams}}reqArgs.{{.UpperName}}, {{end -}}
         {{- range .PosParams}}{{.LowerName}}, {{end -}}
       }, &kwp},
   }
@@ -84,7 +84,6 @@ type {{.UpperName}}OptionalArgs struct {
 }
 
 type {{.LowerName}}KwParams struct {
-  *{{.UpperName}}Args
   *{{.UpperName}}OptionalArgs
 
   /*
@@ -130,7 +129,7 @@ type {{.UpperName}} struct {
 {{.Doc}}
     */
     {{.UpperName}} {{if not .Required}}*{{end}}{{if .Multivalue}}[]{{end}}
-    {{- ToGoType .Type}} `json:"{{.Name}},omitempty"`
+    {{- ToGoStructType .Type}} `json:"{{.Name}},omitempty"`
   {{end -}}
 }
 
@@ -149,7 +148,7 @@ func (t *{{.UpperName}}) String() string {
 
 type json{{.UpperName}} struct {
   {{range .Params}}
-    {{.UpperName}} {{ToGoType .Type}} `json:"{{if .Multivalue}}[]{{end}}{{.Name}}"`
+    {{.UpperName}} {{ToGoStructType .Type}} `json:"{{if .Multivalue}}[]{{end}}{{.Name}}"`
   {{end -}}
 }
 

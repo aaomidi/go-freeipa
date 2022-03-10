@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/tehwalris/go-freeipa/freeipa"
 )
 
 var skipCommands = []string{
@@ -27,6 +29,7 @@ var dictResultCommands = []string{
 	"find",
 	"mod",
 	"show",
+	"del",
 }
 
 func main() {
@@ -70,6 +73,20 @@ func loadSchema() (*Schema, error) {
 			}
 		}
 		if !skip {
+			// Until you see the first required = false, everything is required.
+			for _, p := range c.Params {
+				if p.RequiredRaw == nil {
+					if p.Default == nil {
+						p.RequiredRaw = freeipa.Bool(true)
+					}
+					if p.DefaultFromParam != nil {
+						break
+					}
+				} else {
+					break
+				}
+			}
+
 			// HACK Many result values for FreeIPA methods
 			// have {"type": "dict"}. Often this means the type
 			// of the receiver (eg. "user" in "user_add"), but not
@@ -88,6 +105,13 @@ func loadSchema() (*Schema, error) {
 				}
 			}
 
+			for _, p := range c.Params {
+				if p.AlwaysAsk && p.RequiredRaw == nil {
+					v := true
+					p.RequiredRaw = &v
+				}
+			}
+
 			cmds = append(cmds, c)
 		}
 	}
@@ -102,6 +126,15 @@ func loadSchema() (*Schema, error) {
 			}
 		}
 		if !skip {
+
+			// Until you see the first required = false, everything is required.
+			for _, p := range c.Params {
+				if p.RequiredRaw == nil {
+					p.RequiredRaw = freeipa.Bool(true)
+				} else {
+					break
+				}
+			}
 			// HACK FreeIPA admin user has no "givenname" or "cn", even though the schema
 			// says these fields are required. This workaround makes it optional.
 			if c.Name == "user" {
@@ -187,8 +220,9 @@ func loadErrs() ([]ErrDesc, error) {
 
 func generateMain(schema *Schema, errs []ErrDesc) error {
 	t, e := template.New("freeipa.gotmpl").Funcs(template.FuncMap{
-		"ToGoType":  toGoType,
-		"TrimSpace": strings.TrimSpace,
+		"ToGoType":       toGoType,
+		"TrimSpace":      strings.TrimSpace,
+		"ToGoStructType": toGoStructType,
 	}).ParseFiles("./freeipa.gotmpl")
 	if e != nil {
 		return e

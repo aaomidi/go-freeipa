@@ -76,7 +76,7 @@ type CommandOutput struct {
 
 func (t *Param) Required() bool {
 	if t.RequiredRaw == nil {
-		return len(t.Default) == 0 && len(t.DefaultFromParam) == 0
+		return false
 	}
 	return *t.RequiredRaw
 }
@@ -92,6 +92,16 @@ func (t *Command) PosParams() []*Param {
 	var out []*Param
 	for _, p := range t.Params {
 		if p.Positional {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func (t *Command) RequiredParams() []*Param {
+	var out []*Param
+	for _, p := range t.Params {
+		if p.Required() {
 			out = append(out, p)
 		}
 	}

@@ -23,6 +23,25 @@ func safeName(s string) string {
 	return s
 }
 
+func toGoStructType(ipaType string) string {
+	switch ipaType {
+	case "str":
+		return "IPAPrim[string]"
+	case "bool":
+		return "IPAPrim[bool]"
+	case "int":
+		return "IPAPrim[int]"
+	case "DNSName":
+		return "DNSName"
+	case "Principal":
+		return "IPAPrim[string]"
+	case "datetime":
+		return "IPATime"
+	default:
+		return toGoType(ipaType)
+	}
+}
+
 func toGoType(ipaType string) string {
 	switch ipaType {
 	case "":
@@ -38,7 +57,7 @@ func toGoType(ipaType string) string {
 	case "str":
 		return "string"
 	case "bool":
-		return "IPAPrim[bool]"
+		return "bool"
 	case "bytes":
 		return "string"
 	case "datetime":
@@ -48,7 +67,7 @@ func toGoType(ipaType string) string {
 	case "Principal":
 		return "string"
 	case "DNSName":
-		return "[]DNSName"
+		return "string"
 	case "Decimal":
 		return "float64"
 	case "Certificate":
@@ -67,7 +86,7 @@ func (t *CommandOutput) GoType(parent *Command) string {
 			return upperName(cls)
 		}
 	}
-	return toGoType(t.Type)
+	return toGoStructType(t.Type)
 }
 
 func lowerName(s string) string {
